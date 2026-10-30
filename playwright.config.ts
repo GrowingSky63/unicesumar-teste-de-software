@@ -1,6 +1,8 @@
 import { defineConfig, devices } from '@playwright/test';
 
 export default defineConfig({
+  // Cada teste prepara e remove os próprios dados, então os de um mesmo arquivo também rodam em paralelo.
+  fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
   reporter: [['list'], ['html', { open: 'never' }]],

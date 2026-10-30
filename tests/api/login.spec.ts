@@ -1,24 +1,8 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from '../fixtures/api.fixture';
 
-const usuario = {
-  nome: 'Usuário Login',
-  email: `login.${Date.now()}${Math.floor(Math.random() * 1e6)}@qa.com`,
-  password: 'senha123',
-  administrador: 'false',
-};
-let usuarioId: string | undefined;
+test('autentica com credenciais válidas e devolve um token Bearer', async ({ request, criarUsuario }) => {
+  const usuario = await criarUsuario();
 
-test.beforeAll(async ({ request }) => {
-  const cadastro = await request.post('/usuarios', { data: usuario });
-  expect(cadastro.status()).toBe(201);
-  usuarioId = (await cadastro.json())._id;
-});
-
-test.afterAll(async ({ request }) => {
-  if (usuarioId) await request.delete(`/usuarios/${usuarioId}`);
-});
-
-test('autentica com credenciais válidas e devolve um token Bearer', async ({ request }) => {
   const resposta = await request.post('/login', { data: { email: usuario.email, password: usuario.password } });
 
   expect(resposta.status()).toBe(200);
@@ -28,8 +12,10 @@ test('autentica com credenciais válidas e devolve um token Bearer', async ({ re
   });
 });
 
-test('recusa senha incorreta sem devolver token', async ({ request }) => {
-  const resposta = await request.post('/login', { data: { email: usuario.email, password: 'senha-errada' } });
+test('recusa senha incorreta sem devolver token', async ({ request, criarUsuario }) => {
+  const usuario = await criarUsuario();
+
+  const resposta = await request.post('/login', { data: { email: usuario.email, password: `${usuario.password}x` } });
 
   expect(resposta.status()).toBe(401);
   expect(await resposta.json()).toEqual({ message: 'Email e/ou senha inválidos' });
